@@ -29,7 +29,8 @@ async def health() -> dict[str, str]:
 @app.post("/api/generate")
 async def generate(
     resume: UploadFile = File(...),
-    job_url: str = Form(...),
+    job_url: str | None = Form(None),
+    job_text: str | None = Form(None),
     language: str = Form("ru"),
 ) -> dict[str, str]:
     data = await resume.read()
@@ -40,6 +41,7 @@ async def generate(
             resume_data=data,
             filename=filename,
             job_url=job_url,
+            job_text=job_text,
             language=language,
         )
     except GenerationError as exc:

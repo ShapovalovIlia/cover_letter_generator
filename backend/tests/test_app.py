@@ -25,7 +25,7 @@ class TestHealth:
 
 
 class TestGenerate:
-    async def test_success(
+    async def test_success_with_url(
         self, client: AsyncClient, sample_pdf_bytes: bytes
     ) -> None:
         expected = "Dear Hiring Manager, ..."
@@ -40,6 +40,27 @@ class TestGenerate:
                 data={
                     "job_url": "https://example.com/job",
                     "language": "en",
+                },
+            )
+
+        assert resp.status_code == 200
+        assert resp.json()["cover_letter"] == expected
+
+    async def test_success_with_job_text(
+        self, client: AsyncClient, sample_pdf_bytes: bytes
+    ) -> None:
+        expected = "Generated letter"
+        with patch(
+            "src.app.generate_cover_letter",
+            new_callable=AsyncMock,
+            return_value=expected,
+        ):
+            resp = await client.post(
+                "/api/generate",
+                files={"resume": ("cv.pdf", sample_pdf_bytes)},
+                data={
+                    "job_text": "Python developer at Acme",
+                    "language": "ru",
                 },
             )
 
@@ -88,11 +109,20 @@ class TestGenerate:
         )
         assert resp.status_code == 422
 
-    async def test_missing_job_url(
+    async def test_no_job_input(
         self, client: AsyncClient, sample_pdf_bytes: bytes
     ) -> None:
-        resp = await client.post(
-            "/api/generate",
-            files={"resume": ("cv.pdf", sample_pdf_bytes)},
-        )
-        assert resp.status_code == 422
+        with patch(
+            "src.app.generate_cover_letter",
+            new_callable=AsyncMock,
+            side_effect=GenerationError(
+                "Provide either a job URL or job description text.",
+                status_code=400,
+            ),
+        ):
+            resp = await client.post(
+                "/api/generate",
+                files={"resume": ("cv.pdf", sample_pdf_bytes)},
+            )
+
+        assert resp.status_code == 400

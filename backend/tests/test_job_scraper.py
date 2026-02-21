@@ -73,3 +73,13 @@ class TestScrapeJob:
 
         result = await scrape_job(url)
         assert result == ""
+
+    @respx.mock
+    async def test_truncates_long_text(self) -> None:
+        long_body = "\n".join(f"<p>Line {i}</p>" for i in range(2000))
+        html = f"<html><body>{long_body}</body></html>"
+        url = "https://example.com/job/long"
+        respx.get(url).mock(return_value=httpx.Response(200, text=html))
+
+        result = await scrape_job(url)
+        assert len(result) <= 6000

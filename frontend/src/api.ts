@@ -1,6 +1,7 @@
 export interface GenerateFormData {
   resume: File;
-  jobUrl: string;
+  jobUrl?: string;
+  jobText?: string;
   language: string;
 }
 
@@ -13,8 +14,10 @@ export async function generateCoverLetter(
 ): Promise<GenerateResponse> {
   const form = new FormData();
   form.append("resume", data.resume);
-  form.append("job_url", data.jobUrl);
   form.append("language", data.language);
+
+  if (data.jobUrl) form.append("job_url", data.jobUrl);
+  if (data.jobText) form.append("job_text", data.jobText);
 
   const res = await fetch("/api/generate", {
     method: "POST",

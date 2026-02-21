@@ -5,6 +5,8 @@ from bs4 import BeautifulSoup
 
 logger = logging.getLogger(__name__)
 
+_MAX_CHARS = 6000
+
 _HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -29,6 +31,18 @@ _STRIP_TAGS = frozenset(
 )
 
 
+def _truncate(text: str, max_chars: int = _MAX_CHARS) -> str:
+    if len(text) <= max_chars:
+        return text
+    cut = text[:max_chars].rsplit("\n", maxsplit=1)[0]
+    logger.info(
+        "Truncated scraped text from %d to %d chars",
+        len(text),
+        len(cut),
+    )
+    return cut
+
+
 async def scrape_job(url: str) -> str:
     logger.info("Scraping job page: %s", url)
 
@@ -47,7 +61,7 @@ async def scrape_job(url: str) -> str:
 
     text = soup.get_text(separator="\n", strip=True)
     lines = [line.strip() for line in text.splitlines() if line.strip()]
-    result = "\n".join(lines)
+    result = _truncate("\n".join(lines))
 
     logger.info("Scraped %d chars from %s", len(result), url)
     return result
