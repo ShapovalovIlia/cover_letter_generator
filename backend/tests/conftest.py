@@ -10,14 +10,12 @@ os.environ.setdefault("OPENAI_API_KEY", "sk-test-fake-key")
 
 @pytest.fixture
 def sample_pdf_bytes() -> bytes:
-    doc = pymupdf.open()
-    page = doc.new_page()
-    page.insert_text(
-        (72, 72), "John Doe\nSoftware Engineer\n5 years experience"
-    )
-    data = doc.tobytes()
-    doc.close()
-    return data
+    with pymupdf.open() as doc:  # type: ignore[no-untyped-call]
+        page = doc.new_page()
+        page.insert_text(
+            (72, 72), "John Doe\nSoftware Engineer\n5 years experience"
+        )
+        return doc.tobytes()  # type: ignore[no-any-return]
 
 
 @pytest.fixture
@@ -33,8 +31,6 @@ def sample_docx_bytes() -> bytes:
 
 @pytest.fixture
 def empty_pdf_bytes() -> bytes:
-    doc = pymupdf.open()
-    doc.new_page()
-    data = doc.tobytes()
-    doc.close()
-    return data
+    with pymupdf.open() as doc:  # type: ignore[no-untyped-call]
+        doc.new_page()
+        return doc.tobytes()  # type: ignore[no-any-return]

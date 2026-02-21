@@ -1,4 +1,7 @@
 import logging
+from typing import Any
+
+from langchain_core.messages import BaseMessage
 
 from src.chain import get_chain
 from src.job_scraper import scrape_job
@@ -13,6 +16,26 @@ class GenerationError(Exception):
     def __init__(self, message: str, status_code: int = 500) -> None:
         super().__init__(message)
         self.status_code = status_code
+
+
+def _log_token_usage(usage: dict[str, Any]) -> None:
+    input_tokens = usage.get("input_tokens", 0)
+    output_tokens = usage.get("output_tokens", 0)
+    details = usage.get("input_token_details", {})
+    cache_read = details.get("cache_read", 0)
+    cache_creation = details.get("cache_creation", 0)
+    uncached = input_tokens - cache_read
+
+    logger.info(
+        "Token usage: input=%d (cached=%d, new=%d, "
+        "cache_creation=%d), output=%d, total=%d",
+        input_tokens,
+        cache_read,
+        uncached,
+        cache_creation,
+        output_tokens,
+        input_tokens + output_tokens,
+    )
 
 
 async def generate_cover_letter(
@@ -46,7 +69,7 @@ async def generate_cover_letter(
     )
 
     try:
-        message = await chain.ainvoke(
+        message: BaseMessage = await chain.ainvoke(
             {
                 "resume_text": resume_text,
                 "job_description": job_description,
@@ -60,22 +83,6 @@ async def generate_cover_letter(
 
     usage = getattr(message, "usage_metadata", None)
     if usage:
-        input_tokens = usage.get("input_tokens", 0)
-        output_tokens = usage.get("output_tokens", 0)
-        cache_read = usage.get("input_token_details", {}).get("cache_read", 0)
-        cache_creation = usage.get("input_token_details", {}).get(
-            "cache_creation", 0
-        )
-        uncached = input_tokens - cache_read
-        logger.info(
-            "Token usage: input=%d (cached=%d, new=%d, "
-            "cache_creation=%d), output=%d, total=%d",
-            input_tokens,
-            cache_read,
-            uncached,
-            cache_creation,
-            output_tokens,
-            input_tokens + output_tokens,
-        )
+        _log_token_usage(usage)
 
     return str(message.content)

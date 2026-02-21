@@ -1,12 +1,12 @@
 # Cover Letter Generator
 
-Загрузите резюме (PDF/DOCX) и укажите ссылку на вакансию — сервис сгенерирует сопроводительное письмо с помощью LLM (OpenAI или Anthropic).
+Загрузите резюме (PDF / DOCX) и укажите ссылку на вакансию — сервис сгенерирует сопроводительное письмо с помощью OpenAI LLM.
 
 ## Быстрый старт (Docker)
 
 ```bash
 cp .env.example .env
-# Заполните API-ключи в .env
+# Заполните OPENAI_API_KEY в .env
 
 docker compose up --build
 ```
@@ -20,8 +20,7 @@ docker compose up --build
 ```bash
 cd backend
 uv sync
-cp ../.env.example .env
-# Заполните API-ключи в .env
+cp ../.env .env          # или создайте .env в корне репозитория
 uv run uvicorn src.app:app --reload
 ```
 
@@ -37,8 +36,42 @@ npm run dev
 
 Dev-сервер запустится на `http://localhost:5173` с проксированием `/api/*` на backend.
 
+## Тесты
+
+```bash
+cd backend
+uv run pytest
+```
+
+## Линтинг и форматирование
+
+В проекте настроены pre-commit хуки (`ruff`, `mypy`). Для первичной установки:
+
+```bash
+cd backend
+uv sync --group dev
+uv run pre-commit install
+```
+
+Ручной запуск:
+
+```bash
+uv run ruff check backend/
+uv run ruff format backend/
+uv run --directory backend mypy
+```
+
+## Переменные окружения
+
+| Переменная | Описание | По умолчанию |
+|---|---|---|
+| `OPENAI_API_KEY` | API-ключ OpenAI | — (обязательно) |
+| `OPENAI_MODEL` | Модель OpenAI | `gpt-4o` |
+| `LOG_LEVEL` | Уровень логирования | `INFO` |
+
 ## Стек
 
-- **Backend**: Python, FastAPI, LangChain, uv
-- **Frontend**: React, TypeScript, Vite, Tailwind CSS
-- **Инфраструктура**: Docker, docker-compose, nginx
+- **Backend**: Python 3.13, FastAPI, LangChain, uv
+- **Frontend**: React 19, TypeScript, Vite, Tailwind CSS
+- **Инфраструктура**: Docker, docker-compose, Nginx
+- **Качество кода**: ruff, mypy, pre-commit, pytest

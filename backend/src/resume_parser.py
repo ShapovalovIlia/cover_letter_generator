@@ -1,13 +1,12 @@
 import io
 import logging
 from collections.abc import Callable
+from pathlib import PurePath
 
 import docx
 import pymupdf
 
 logger = logging.getLogger(__name__)
-
-_SUPPORTED_EXTENSIONS = (".pdf", ".docx")
 
 
 def _parse_pdf(data: bytes) -> str:
@@ -28,14 +27,12 @@ _PARSERS: dict[str, Callable[[bytes], str]] = {
 
 
 def parse_resume(data: bytes, filename: str) -> str:
-    ext = "." + filename.rsplit(".", maxsplit=1)[-1].lower()
+    ext = PurePath(filename).suffix.lower()
 
     parser = _PARSERS.get(ext)
     if parser is None:
-        msg = (
-            f"Unsupported file format: {filename}. "
-            f"Use {', '.join(_SUPPORTED_EXTENSIONS)}."
-        )
+        supported = ", ".join(_PARSERS)
+        msg = f"Unsupported file format: {filename}. Use {supported}."
         raise ValueError(msg)
 
     logger.info("Parsing resume '%s' (%s)", filename, ext)
