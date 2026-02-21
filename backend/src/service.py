@@ -46,7 +46,7 @@ async def generate_cover_letter(
     )
 
     try:
-        return await chain.ainvoke(
+        message = await chain.ainvoke(
             {
                 "resume_text": resume_text,
                 "job_description": job_description,
@@ -57,3 +57,25 @@ async def generate_cover_letter(
         logger.exception("LLM call failed")
         msg = f"LLM generation failed: {exc}"
         raise GenerationError(msg, status_code=502) from exc
+
+    usage = getattr(message, "usage_metadata", None)
+    if usage:
+        input_tokens = usage.get("input_tokens", 0)
+        output_tokens = usage.get("output_tokens", 0)
+        cache_read = usage.get("input_token_details", {}).get("cache_read", 0)
+        cache_creation = usage.get("input_token_details", {}).get(
+            "cache_creation", 0
+        )
+        uncached = input_tokens - cache_read
+        logger.info(
+            "Token usage: input=%d (cached=%d, new=%d, "
+            "cache_creation=%d), output=%d, total=%d",
+            input_tokens,
+            cache_read,
+            uncached,
+            cache_creation,
+            output_tokens,
+            input_tokens + output_tokens,
+        )
+
+    return str(message.content)

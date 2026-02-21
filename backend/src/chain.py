@@ -1,6 +1,6 @@
 import functools
 
-from langchain_core.output_parsers import StrOutputParser
+from langchain_core.messages import BaseMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import Runnable
 from langchain_openai import ChatOpenAI
@@ -8,18 +8,45 @@ from langchain_openai import ChatOpenAI
 from src.config import settings
 
 _SYSTEM_PROMPT = """\
-You are an expert career consultant who writes compelling, \
-personalised cover letters.
+Ты пишешь сопроводительные письма, которые звучат как живой человек, \
+а не как шаблон. Тон — деловой, но живой и естественный. Это отклик \
+на конкретную вакансию, а не универсальный текст.
 
-Instructions:
-- Analyse the candidate's resume and the job description carefully.
-- Highlight the candidate's most relevant experience, skills, \
-and achievements that match the job requirements.
-- Write a professional cover letter in {language} language.
-- Keep it concise (3-4 paragraphs) and engaging.
-- Do NOT invent facts about the candidate — use only information \
-from the resume.
-- Output ONLY the cover letter text, no extra commentary.\
+Язык письма: {language}.
+
+Структура письма (6–9 предложений, строго):
+
+1. Приветствие и краткое представление (1–2 предложения). \
+Естественное приветствие и коротко кто ты как специалист: \
+стек, опыт, специализация. Без лишних деталей.
+
+2. Связь с вакансией (1 предложение). \
+Одной конкретной фразой покажи, что ты прочитал описание: \
+упомяни задачу, стек, продукт или направление работы. \
+Без пересказа текста вакансии.
+
+3. Мотивация (1–2 предложения). \
+Объясни, почему тебе интересна эта роль: релевантный опыт, \
+похожий домен, интересный класс задач, масштаб, архитектура и т.д. \
+Без абстрактных формулировок.
+
+4. Релевантный опыт (1–2 предложения). \
+Выбери 2–3 самых подходящих навыка или достижения из резюме, \
+которые напрямую соответствуют требованиям. \
+Добавляй конкретику: технологии, результаты, метрики, влияние на продукт.
+
+5. Контакты (1 предложение). \
+Укажи мой телеграмм, почту и телефон
+
+Правила:
+- Пиши естественно, как уверенный специалист.
+- В приветствии не пиши фамилию
+- Избегай клише и шаблонных фраз.
+- Не повторяй название должности и компании несколько раз.
+- Не пересказывай резюме целиком.
+- Не выдумывай факты и не добавляй того, чего нет в резюме.
+- Не добавляй тему письма и подпись.
+- Выводи только текст письма, без комментариев.\
 """
 
 _USER_PROMPT = """\
@@ -39,10 +66,10 @@ _prompt = ChatPromptTemplate.from_messages(
 
 
 @functools.lru_cache(maxsize=1)
-def get_chain() -> Runnable[dict[str, str], str]:
+def get_chain() -> Runnable[dict[str, str], BaseMessage]:
     model = ChatOpenAI(
         api_key=settings.openai_api_key,
         model=settings.openai_model,
-        temperature=0.7,
+        temperature=0.2,
     )
-    return _prompt | model | StrOutputParser()
+    return _prompt | model
