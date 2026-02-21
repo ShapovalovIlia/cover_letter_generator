@@ -1,4 +1,5 @@
 import logging
+from collections.abc import AsyncIterator
 from typing import Any
 from urllib.parse import urlparse
 
@@ -113,3 +114,65 @@ async def generate_cover_letter(
         _log_token_usage(usage)
 
     return str(message.content)
+
+
+async def _prepare_chain_input(
+    resume_data: bytes,
+    filename: str,
+    *,
+    job_url: str | None = None,
+    job_text: str | None = None,
+    language: str = "ru",
+) -> dict[str, str]:
+    try:
+        resume_text = parse_resume(resume_data, filename)
+    except ValueError as exc:
+        raise GenerationError(str(exc), status_code=400) from exc
+
+    if not resume_text.strip():
+        msg = "Could not extract text from the resume."
+        raise GenerationError(msg, status_code=400)
+
+    job_description = await _resolve_job_description(job_url, job_text)
+
+    logger.info(
+        "Generating cover letter (lang=%s, resume=%d chars, job=%d chars)",
+        language,
+        len(resume_text),
+        len(job_description),
+    )
+
+    return {
+        "resume_text": resume_text,
+        "job_description": job_description,
+        "language": language,
+    }
+
+
+async def stream_cover_letter(
+    resume_data: bytes,
+    filename: str,
+    *,
+    job_url: str | None = None,
+    job_text: str | None = None,
+    language: str = "ru",
+) -> AsyncIterator[str]:
+    chain_input = await _prepare_chain_input(
+        resume_data,
+        filename,
+        job_url=job_url,
+        job_text=job_text,
+        language=language,
+    )
+    chain = get_chain()
+
+    try:
+        async for chunk in chain.astream(chain_input):
+            content = getattr(chunk, "content", None)
+            token = str(content) if content is not None else str(chunk)
+            if token:
+                yield str(token)
+    except Exception as exc:
+        logger.exception("LLM streaming failed")
+        msg = f"LLM generation failed: {exc}"
+        raise GenerationError(msg, status_code=502) from exc

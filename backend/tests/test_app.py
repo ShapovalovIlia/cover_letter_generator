@@ -1,3 +1,4 @@
+from collections.abc import AsyncIterator
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -126,3 +127,32 @@ class TestGenerate:
             )
 
         assert resp.status_code == 400
+
+
+class TestGenerateStream:
+    async def test_stream_success(
+        self, client: AsyncClient, sample_pdf_bytes: bytes
+    ) -> None:
+        async def fake_stream(**_kw: object) -> AsyncIterator[str]:
+            for word in ["Hello", " ", "world"]:
+                yield word
+
+        with patch(
+            "src.app.stream_cover_letter",
+            side_effect=fake_stream,
+        ):
+            resp = await client.post(
+                "/api/generate/stream",
+                files={"resume": ("cv.pdf", sample_pdf_bytes)},
+                data={
+                    "job_url": "https://example.com/job",
+                    "language": "en",
+                },
+            )
+
+        assert resp.status_code == 200
+        assert "text/event-stream" in resp.headers["content-type"]
+        body = resp.text
+        assert "data: Hello" in body
+        assert "data: world" in body
+        assert "data: [DONE]" in body

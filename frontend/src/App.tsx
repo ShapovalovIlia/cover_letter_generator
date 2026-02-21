@@ -1,25 +1,56 @@
-import { useState } from "react";
-import { generateCoverLetter, type GenerateFormData } from "./api";
+import { useRef, useState } from "react";
+import { streamCoverLetter, type GenerateFormData } from "./api";
 import GenerateForm from "./components/GenerateForm";
+import HistoryPanel from "./components/HistoryPanel";
 import ResultCard from "./components/ResultCard";
+import { useHistory } from "./hooks/useHistory";
 
 export default function App() {
   const [loading, setLoading] = useState(false);
+  const [streaming, setStreaming] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const { entries, addEntry, removeEntry, clearHistory } = useHistory();
 
   const handleSubmit = async (data: GenerateFormData) => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setLoading(true);
+    setStreaming(true);
     setError(null);
-    setResult(null);
+    setResult("");
+
     try {
-      const res = await generateCoverLetter(data);
-      setResult(res.cover_letter);
+      let full = "";
+      await streamCoverLetter(
+        data,
+        (token) => {
+          full += token;
+          setResult(full);
+        },
+        controller.signal,
+      );
+      setResult(full);
+      const jobSource = data.jobUrl
+        ? new URL(data.jobUrl).hostname
+        : "текст";
+      addEntry(full, jobSource);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unexpected error");
+      if ((err as Error).name !== "AbortError") {
+        setError(err instanceof Error ? err.message : "Unexpected error");
+      }
     } finally {
       setLoading(false);
+      setStreaming(false);
     }
+  };
+
+  const handleHistorySelect = (text: string) => {
+    setResult(text);
+    setError(null);
   };
 
   return (
@@ -45,11 +76,20 @@ export default function App() {
           </div>
         )}
 
-        {result && (
+        {result !== null && result !== "" && (
           <div className="mt-6">
-            <ResultCard text={result} />
+            <ResultCard text={result} streaming={streaming} />
           </div>
         )}
+
+        <div className="mt-6">
+          <HistoryPanel
+            entries={entries}
+            onSelect={handleHistorySelect}
+            onRemove={removeEntry}
+            onClear={clearHistory}
+          />
+        </div>
       </div>
     </div>
   );
