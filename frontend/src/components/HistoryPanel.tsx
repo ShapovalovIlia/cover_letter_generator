@@ -5,7 +5,6 @@ interface Props {
   entries: HistoryEntry[];
   onSelect: (text: string) => void;
   onRemove: (id: string) => void;
-  onClear: () => void;
 }
 
 function formatDate(iso: string): string {
@@ -22,7 +21,6 @@ export default function HistoryPanel({
   entries,
   onSelect,
   onRemove,
-  onClear,
 }: Props) {
   const [open, setOpen] = useState(false);
 
@@ -59,15 +57,15 @@ export default function HistoryPanel({
               >
                 <button
                   type="button"
-                  onClick={() => onSelect(entry.text)}
+                  onClick={() => onSelect(entry.cover_letter)}
                   className="min-w-0 flex-1 text-left"
                 >
                   <p className="truncate text-sm text-gray-700">
-                    {entry.text.slice(0, 100)}...
+                    {entry.cover_letter.slice(0, 100)}...
                   </p>
                   <p className="mt-0.5 text-xs text-gray-400">
-                    {formatDate(entry.createdAt)}
-                    {entry.jobSource && ` · ${entry.jobSource}`}
+                    {formatDate(entry.created_at)}
+                    {entry.resume_filename && ` · ${entry.resume_filename}`}
                   </p>
                 </button>
                 <button
@@ -83,15 +81,6 @@ export default function HistoryPanel({
               </li>
             ))}
           </ul>
-          <div className="border-t border-gray-100 px-5 py-2">
-            <button
-              type="button"
-              onClick={onClear}
-              className="text-xs text-gray-400 hover:text-red-500 transition"
-            >
-              Очистить историю
-            </button>
-          </div>
         </div>
       )}
     </div>
