@@ -6,10 +6,6 @@ import pymupdf
 import pytest
 
 os.environ.setdefault("OPENAI_API_KEY", "sk-test-fake-key")
-os.environ.setdefault("GOOGLE_CLIENT_ID", "test-client-id")
-os.environ.setdefault("GOOGLE_CLIENT_SECRET", "test-client-secret")
-os.environ.setdefault("JWT_SECRET", "test-jwt-secret")
-os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite://")
 
 
 @pytest.fixture

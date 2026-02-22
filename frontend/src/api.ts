@@ -9,22 +9,6 @@ export interface GenerateResponse {
   cover_letter: string;
 }
 
-export interface UserInfo {
-  id: string;
-  email: string;
-  name: string;
-  picture: string;
-}
-
-export interface HistoryEntry {
-  id: string;
-  resume_filename: string;
-  job_url: string | null;
-  cover_letter: string;
-  language: string;
-  created_at: string;
-}
-
 function buildForm(data: GenerateFormData): FormData {
   const form = new FormData();
   form.append("resume", data.resume);
@@ -32,27 +16,6 @@ function buildForm(data: GenerateFormData): FormData {
   if (data.jobUrl) form.append("job_url", data.jobUrl);
   if (data.jobText) form.append("job_text", data.jobText);
   return form;
-}
-
-export async function fetchMe(): Promise<UserInfo | null> {
-  const res = await fetch("/api/auth/me");
-  if (res.status === 401) return null;
-  if (!res.ok) return null;
-  return res.json();
-}
-
-export async function logout(): Promise<void> {
-  await fetch("/api/auth/logout", { method: "POST" });
-}
-
-export async function fetchHistory(): Promise<HistoryEntry[]> {
-  const res = await fetch("/api/history");
-  if (!res.ok) return [];
-  return res.json();
-}
-
-export async function deleteHistoryEntry(id: string): Promise<void> {
-  await fetch(`/api/history/${id}`, { method: "DELETE" });
 }
 
 export async function generateCoverLetter(

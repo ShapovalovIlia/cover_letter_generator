@@ -2,33 +2,16 @@ import { useRef, useState } from "react";
 import { streamCoverLetter, type GenerateFormData } from "./api";
 import GenerateForm from "./components/GenerateForm";
 import HistoryPanel from "./components/HistoryPanel";
-import LoginPage from "./components/LoginPage";
 import ResultCard from "./components/ResultCard";
-import Spinner from "./components/Spinner";
-import UserHeader from "./components/UserHeader";
-import { AuthProvider, useAuth } from "./hooks/useAuth";
 import { useHistory } from "./hooks/useHistory";
 
-function Main() {
-  const { user, login, logout } = useAuth();
+export default function App() {
   const [loading, setLoading] = useState(false);
   const [streaming, setStreaming] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const { entries, refresh, removeEntry } = useHistory();
-
-  if (user === "loading") {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Spinner />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <LoginPage onLogin={login} />;
-  }
+  const { entries, addEntry, removeEntry, clearHistory } = useHistory();
 
   const handleSubmit = async (data: GenerateFormData) => {
     abortRef.current?.abort();
@@ -51,7 +34,10 @@ function Main() {
         controller.signal,
       );
       setResult(full);
-      refresh();
+      const jobSource = data.jobUrl
+        ? new URL(data.jobUrl).hostname
+        : "текст";
+      addEntry(full, jobSource);
     } catch (err) {
       if ((err as Error).name !== "AbortError") {
         setError(err instanceof Error ? err.message : "Unexpected error");
@@ -70,8 +56,6 @@ function Main() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50">
       <div className="mx-auto max-w-2xl px-4 py-12">
-        <UserHeader user={user} onLogout={logout} />
-
         <header className="mb-10 text-center">
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">
             Cover Letter Generator
@@ -103,17 +87,10 @@ function Main() {
             entries={entries}
             onSelect={handleHistorySelect}
             onRemove={removeEntry}
+            onClear={clearHistory}
           />
         </div>
       </div>
     </div>
-  );
-}
-
-export default function App() {
-  return (
-    <AuthProvider>
-      <Main />
-    </AuthProvider>
   );
 }

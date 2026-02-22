@@ -19,13 +19,6 @@ class Settings(BaseSettings):
     openai_api_key: SecretStr
     openai_model: str = "gpt-4o"
 
-    google_client_id: str = ""
-    google_client_secret: SecretStr = SecretStr("")
-    jwt_secret: SecretStr = SecretStr("change-me-in-production")
-
-    database_url: str = f"sqlite+aiosqlite:///{_BASE_DIR / 'data' / 'app.db'}"
-    frontend_url: str = "http://localhost:3000"
-
     log_level: str = "INFO"
 
 
