@@ -2,16 +2,20 @@
 
 Загрузите резюме (PDF / DOCX) и укажите ссылку на вакансию — сервис сгенерирует сопроводительное письмо с помощью OpenAI LLM.
 
-## Быстрый старт (Docker)
+## Быстрый старт (прода / Docker)
+
+Одна команда — поднимает backend и frontend:
 
 ```bash
 cp .env.example .env
 # Заполните OPENAI_API_KEY в .env
 
-docker compose up --build
+make up
 ```
 
-Приложение будет доступно по адресу **http://localhost:3000**.
+Или без Make: `docker compose up --build`.
+
+Приложение будет доступно по адресу **http://localhost:3000**. Остановка: `make down` или Ctrl+C.
 
 ## Локальная разработка
 
